@@ -26,7 +26,7 @@ public class ItunesDAO {
 			ResultSet res = st.executeQuery();
 
 			while (res.next()) {
-				result.add(new Album(res.getInt("AlbumId"), res.getString("Title")));
+				result.add(new Album(res.getInt("AlbumId"), res.getString("Title"), 0));
 			}
 			conn.close();
 		} catch (SQLException e) {
@@ -130,6 +130,41 @@ public class ItunesDAO {
 
 			while (res.next()) {
 				result.add(new MediaType(res.getInt("MediaTypeId"), res.getString("Name")));
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		return result;
+	}
+	
+	/*
+	"SELECT DISTINCT(a.AlbumId), a.Title, SUM(t.UnitPrice) as costo\n"
+	+ "FROM album a, track t\n"
+	+ "WHERE a.AlbumId = t.AlbumId\n"
+	+ "GROUP BY a.AlbumId, a.Title\n"
+	+ "HAVING costo < 30"
+	*/
+	
+	public List<Album> getVertici(double n){
+		final String sql = "SELECT DISTINCT(a.AlbumId), a.Title, SUM(t.UnitPrice) as costo "
+				+ "FROM album a, track t "
+				+ "WHERE a.AlbumId = t.AlbumId "
+				+ "GROUP BY a.AlbumId, a.Title "
+				+ "HAVING costo > ?";
+		List<Album> result = new LinkedList<>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			
+			st.setDouble(1, n);
+			
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				result.add(new Album(res.getInt("AlbumId"), res.getString("Title"), res.getInt("costo")));
 			}
 			conn.close();
 		} catch (SQLException e) {
